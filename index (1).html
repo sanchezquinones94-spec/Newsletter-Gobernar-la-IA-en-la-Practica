@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gobernar la IA en la Práctica</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* Matched to the slate-indigo image: #1e2440 deep corners, #2d3560 mid, glow #b0bcd8 */
+    --navy-deep: #171c30;
+    --navy-mid: #1e2440;
+    --navy-card: #1a2238;
+    --steel-blue: #2d3a5e;
+    --pearl: #b8c6e0;
+    --accent: #5b85c8;
+    --accent-bright: #849fd8;
+    --accent-light: #aabde8;
+    --white: #eaeffb;
+    --muted: #7080a8;
+    --border: rgba(91, 133, 200, 0.15);
+    --border-strong: rgba(91, 133, 200, 0.28);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--navy-deep);
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    overflow-x: hidden;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 16px 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(14, 22, 40, 0.92);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-logo { display: flex; align-items: center; gap: 14px; }
+  .logo-mark { width: 40px; height: 40px; flex-shrink: 0; }
+
+  .nav-brand-text { display: flex; flex-direction: column; line-height: 1.15; }
+  .nav-brand-text .label { font-size: 9px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--accent-bright); font-weight: 500; }
+  .nav-brand-text .name { font-family: 'Playfair Display', serif; font-size: 0.98rem; font-weight: 700; color: var(--white); }
+
+  .nav-cta {
+    padding: 9px 24px;
+    border: 1px solid var(--border-strong);
+    color: var(--accent-bright);
+    background: transparent;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    transition: all 0.25s;
+    text-decoration: none;
+  }
+  .nav-cta:hover { background: rgba(91,155,213,0.1); border-color: var(--accent-bright); }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    text-align: center;
+    padding: 120px 24px 80px;
+    position: relative; overflow: hidden;
+  }
+
+  .hero-bg {
+    position: absolute; inset: 0;
+    background:
+      /* Off-center pearl/white glow like image 2 — slightly right of center */
+      radial-gradient(ellipse 55% 40% at 62% 52%, rgba(210,218,240,0.22) 0%, rgba(160,178,220,0.12) 30%, transparent 65%),
+      /* Outer dark navy-indigo corners */
+      radial-gradient(ellipse 100% 60% at 0% 0%, rgba(16, 18, 38, 0.9) 0%, transparent 60%),
+      radial-gradient(ellipse 80% 50% at 100% 100%, rgba(14, 16, 34, 0.85) 0%, transparent 55%),
+      /* Base: slate-indigo gradient matching image 2 exactly */
+      linear-gradient(180deg, #151929 0%, #1e2440 25%, #263054 50%, #1e2440 75%, #151929 100%);
+  }
+
+  .hero-grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(91,155,213,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(91,155,213,0.03) 1px, transparent 1px);
+    background-size: 52px 52px;
+    animation: gridDrift 25s linear infinite;
+  }
+
+  @keyframes gridDrift { 0%{transform:translateY(0)} 100%{transform:translateY(52px)} }
+
+  .particle {
+    position: absolute; border-radius: 50%; opacity: 0;
+    animation: floatUp var(--dur,9s) var(--delay,0s) infinite ease-in-out;
+  }
+  @keyframes floatUp {
+    0%,100%{opacity:0;transform:translateY(0) scale(1)}
+    25%{opacity:0.5} 75%{opacity:0.2}
+  }
+
+  .hero-logo-wrap {
+    position: relative; z-index: 2;
+    margin-bottom: 28px;
+    animation: fadeUp 0.8s ease both;
+  }
+
+  .hero-logo-svg {
+    width: 340px; height: 140px;
+    filter: drop-shadow(0 0 32px rgba(132, 159, 216, 0.5));
+  }
+
+  .hero-eyebrow {
+    position: relative; z-index: 2;
+    font-size: 10px; font-weight: 500;
+    letter-spacing: 0.32em; text-transform: uppercase;
+    color: var(--accent-bright);
+    margin-bottom: 20px;
+    display: flex; align-items: center; gap: 14px;
+    animation: fadeUp 0.8s 0.08s ease both;
+  }
+  .hero-eyebrow::before,.hero-eyebrow::after { content:''; display:block; width:44px; height:1px; background:linear-gradient(90deg,transparent,var(--accent)); }
+  .hero-eyebrow::after { background:linear-gradient(90deg,var(--accent),transparent); }
+
+  .hero-title {
+    position: relative; z-index: 2;
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.8rem, 6.5vw, 5.2rem);
+    font-weight: 900; line-height: 1.08;
+    margin-bottom: 12px;
+    animation: fadeUp 0.8s 0.15s ease both;
+  }
+
+  .hero-title .highlight {
+    background: linear-gradient(135deg, var(--accent-light), var(--accent-bright), var(--accent));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+
+  .hero-subtitle {
+    position: relative; z-index: 2;
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.05rem, 2.3vw, 1.7rem);
+    font-style: italic; color: var(--muted); font-weight: 400;
+    margin-bottom: 28px;
+    animation: fadeUp 0.8s 0.22s ease both;
+  }
+
+  .hero-desc {
+    position: relative; z-index: 2;
+    max-width: 580px; font-size: 1.05rem; line-height: 1.78;
+    color: #a4bcd8; margin-bottom: 42px;
+    animation: fadeUp 0.8s 0.3s ease both;
+  }
+
+  .hero-form {
+    position: relative; z-index: 2;
+    width: 100%; max-width: 460px;
+    display: flex; flex-direction: column; gap: 12px;
+    animation: fadeUp 0.8s 0.38s ease both;
+  }
+
+  .input-row {
+    display: flex;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+  .input-row:focus-within { border-color: rgba(91,155,213,0.45); box-shadow: 0 0 0 3px rgba(91,155,213,0.07); }
+  .input-row input { flex:1; background:transparent; border:none; outline:none; padding:14px 18px; color:var(--white); font-family:'DM Sans',sans-serif; font-size:0.95rem; }
+  .input-row input::placeholder { color:var(--muted); }
+
+  .btn-primary { padding:14px 26px; background:var(--accent); color:#fff; border:none; cursor:pointer; font-family:'DM Sans',sans-serif; font-weight:500; font-size:0.88rem; letter-spacing:0.06em; white-space:nowrap; transition:background 0.25s,transform 0.2s; }
+  .btn-primary:hover { background:var(--accent-bright); transform:translateX(2px); }
+
+  .hero-trust { position:relative; z-index:2; font-size:0.78rem; color:var(--muted); display:flex; align-items:center; gap:8px; animation:fadeUp 0.8s 0.46s ease both; }
+
+  /* PROOF STRIP */
+  .proof-strip { position:relative; z-index:1; border-top:1px solid var(--border); border-bottom:1px solid var(--border); background:rgba(22,36,62,0.85); padding:30px 24px; display:flex; justify-content:center; gap:64px; flex-wrap:wrap; }
+  .proof-item { text-align:center; }
+  .proof-number { font-family:'Playfair Display',serif; font-size:2rem; font-weight:700; color:var(--accent-bright); line-height:1; }
+  .proof-label { font-size:0.74rem; color:var(--muted); letter-spacing:0.12em; text-transform:uppercase; margin-top:6px; }
+
+  /* SECTION */
+  .section { position:relative; z-index:1; max-width:1100px; margin:0 auto; padding:80px 24px; }
+  .section-eyebrow { font-size:10px; font-weight:500; letter-spacing:0.32em; text-transform:uppercase; color:var(--accent-bright); margin-bottom:14px; }
+  .section-title { font-family:'Playfair Display',serif; font-size:clamp(1.8rem,3.5vw,2.8rem); font-weight:700; line-height:1.2; margin-bottom:18px; }
+  .section-body { font-size:1rem; line-height:1.82; color:#a4bcd8; max-width:620px; }
+
+  hr.divider { max-width:1100px; margin:0 auto; border:none; border-top:1px solid var(--border); }
+
+  /* AUDIENCE */
+  .audience-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:48px; }
+  @media(max-width:680px){ .audience-grid{grid-template-columns:1fr;} }
+
+  .audience-card { background:var(--navy-card); border:1px solid var(--border); padding:36px 32px; position:relative; overflow:hidden; transition:transform 0.3s,border-color 0.3s; }
+  .audience-card::before { content:''; position:absolute; top:0;left:0;right:0; height:2px; background:linear-gradient(90deg,transparent,var(--accent),transparent); opacity:0; transition:opacity 0.3s; }
+  .audience-card:hover { transform:translateY(-4px); border-color:var(--border-strong); }
+  .audience-card:hover::before { opacity:1; }
+  .audience-icon { font-size:1.9rem; margin-bottom:14px; }
+  .audience-title { font-family:'Playfair Display',serif; font-size:1.15rem; font-weight:700; margin-bottom:10px; }
+  .audience-desc { font-size:0.88rem; line-height:1.72; color:var(--muted); }
+  .audience-list { list-style:none; margin-top:14px; display:flex; flex-direction:column; gap:8px; }
+  .audience-list li { font-size:0.86rem; color:var(--muted); display:flex; gap:10px; line-height:1.5; }
+  .audience-list li::before { content:'—'; color:var(--accent); flex-shrink:0; }
+
+  /* CONTENT SPLIT */
+  .content-split { display:grid; grid-template-columns:1fr 1fr; gap:72px; align-items:start; }
+  @media(max-width:768px){ .content-split{grid-template-columns:1fr;gap:40px;} }
+
+  .content-list { list-style:none; margin-top:32px; display:flex; flex-direction:column; gap:22px; }
+  .content-list li { display:flex; gap:16px; align-items:flex-start; }
+  .content-list .icon { flex-shrink:0; width:36px; height:36px; background:rgba(91,155,213,0.1); border:1px solid rgba(91,155,213,0.22); display:flex; align-items:center; justify-content:center; font-size:1rem; margin-top:2px; }
+  .content-list .text strong { display:block; font-size:0.94rem; color:var(--white); margin-bottom:4px; }
+  .content-list .text span { font-size:0.85rem; color:var(--muted); line-height:1.65; }
+
+  /* EDITION CARD */
+  .edition-card { background:var(--navy-card); border:1px solid var(--border); padding:36px; position:relative; overflow:hidden; }
+  .edition-card::after { content:''; position:absolute; top:-50px;right:-50px; width:130px;height:130px; background:radial-gradient(circle,rgba(91,155,213,0.1) 0%,transparent 70%); border-radius:50%; }
+  .edition-tag { display:inline-block; padding:4px 12px; background:rgba(91,155,213,0.1); border:1px solid rgba(91,155,213,0.2); font-size:0.7rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--accent-bright); margin-bottom:18px; }
+  .edition-title { font-family:'Playfair Display',serif; font-size:1.28rem; font-weight:700; margin-bottom:20px; line-height:1.3; }
+  .edition-toc { list-style:none; display:flex; flex-direction:column; gap:10px; }
+  .edition-toc li { display:flex; align-items:flex-start; gap:10px; font-size:0.87rem; color:#9cb4cc; line-height:1.5; }
+  .edition-toc .num { flex-shrink:0; width:20px;height:20px; background:rgba(91,155,213,0.12); color:var(--accent-bright); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.68rem; font-weight:600; margin-top:1px; }
+  .quote-block { border-left:3px solid var(--accent); padding:18px 22px; background:rgba(91,155,213,0.05); margin-top:24px; font-family:'Playfair Display',serif; font-size:0.88rem; font-style:italic; line-height:1.72; color:#b8cde6; }
+
+  /* BARRIERS */
+  .barriers-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:22px; margin-top:48px; }
+  .barrier-card { background:var(--navy-card); border:1px solid var(--border); padding:30px; transition:transform 0.3s,border-color 0.3s; }
+  .barrier-card:hover { transform:translateY(-4px); border-color:var(--border-strong); }
+  .barrier-num { font-size:0.7rem; letter-spacing:0.22em; text-transform:uppercase; color:var(--accent); margin-bottom:10px; }
+  .barrier-title { font-family:'Playfair Display',serif; font-size:1.08rem; font-weight:700; margin-bottom:10px; }
+  .barrier-text { font-size:0.87rem; line-height:1.72; color:var(--muted); }
+
+  /* SERVICES */
+  .services-wrap { background:linear-gradient(180deg,rgba(22,36,62,0.5) 0%,rgba(14,22,40,0.3) 100%); border-top:1px solid var(--border); border-bottom:1px solid var(--border); }
+  .services-intro { text-align:center; max-width:640px; margin:0 auto 52px; }
+  .services-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:24px; }
+
+  .service-card { background:var(--navy-card); border:1px solid var(--border); padding:34px 30px; display:flex; flex-direction:column; position:relative; overflow:hidden; transition:transform 0.3s,border-color 0.3s; }
+  .service-card::before { content:''; position:absolute; top:0;left:0;right:0; height:3px; background:linear-gradient(90deg,transparent,var(--accent-bright),transparent); opacity:0; transition:opacity 0.3s; }
+  .service-card:hover { transform:translateY(-5px); border-color:var(--border-strong); }
+  .service-card:hover::before { opacity:1; }
+
+  .service-num { font-size:0.68rem; letter-spacing:0.28em; text-transform:uppercase; color:var(--accent); margin-bottom:16px; display:flex; align-items:center; gap:10px; }
+  .service-num::after { content:''; flex:1; height:1px; background:var(--border); }
+  .service-icon { font-size:1.8rem; margin-bottom:14px; }
+  .service-title { font-family:'Playfair Display',serif; font-size:1.18rem; font-weight:700; margin-bottom:14px; line-height:1.3; }
+  .service-desc { font-size:0.88rem; line-height:1.72; color:var(--muted); }
+
+  .service-list { list-style:none; margin:14px 0; display:flex; flex-direction:column; gap:8px; }
+  .service-list li { font-size:0.85rem; color:#9cb4cc; display:flex; gap:10px; line-height:1.5; }
+  .service-list li::before { content:'✓'; color:var(--accent-bright); font-weight:600; flex-shrink:0; }
+
+  .service-cta { display:inline-block; margin-top:22px; padding:11px 22px; border:1px solid var(--border-strong); color:var(--accent-bright); background:transparent; font-family:'DM Sans',sans-serif; font-size:0.82rem; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer; text-decoration:none; transition:all 0.25s; align-self:flex-start; }
+  .service-cta:hover { background:rgba(91,155,213,0.1); border-color:var(--accent-bright); }
+
+  /* AUTHOR */
+  .author-inner { max-width:1100px; margin:0 auto; padding:80px 24px; display:grid; grid-template-columns:auto 1fr; gap:60px; align-items:center; }
+  @media(max-width:640px){ .author-inner{grid-template-columns:1fr;gap:32px;text-align:center;} }
+  .author-avatar { width:110px;height:110px; background:linear-gradient(135deg,var(--steel-blue),rgba(91,155,213,0.3)); border:1px solid var(--border-strong); display:flex; align-items:center; justify-content:center; font-family:'Playfair Display',serif; font-size:2.3rem; font-weight:700; color:var(--accent-bright); flex-shrink:0; }
+  .author-name { font-family:'Playfair Display',serif; font-size:1.5rem; font-weight:700; margin-bottom:6px; }
+  .author-role { font-size:0.78rem; color:var(--accent-bright); letter-spacing:0.12em; text-transform:uppercase; margin-bottom:14px; }
+  .author-bio { font-size:0.92rem; line-height:1.82; color:#9cb4cc; max-width:560px; }
+
+  /* CTA BOTTOM */
+  .cta-bottom { text-align:center; padding:100px 24px; background:linear-gradient(180deg,var(--navy-deep) 0%,#0c1420 100%); position:relative; overflow:hidden; }
+  .cta-glow { position:absolute; bottom:-80px;left:50%; transform:translateX(-50%); width:700px;height:250px; background:radial-gradient(ellipse,rgba(91,155,213,0.1) 0%,transparent 70%); pointer-events:none; }
+  .cta-form { display:flex; flex-direction:column; align-items:center; gap:12px; max-width:440px; margin:0 auto; }
+  .cta-form .input-row { width:100%; }
+  .btn-full { width:100%; padding:16px; background:var(--accent); color:#fff; border:none; cursor:pointer; font-family:'DM Sans',sans-serif; font-weight:500; font-size:1rem; letter-spacing:0.05em; transition:background 0.25s,transform 0.2s; }
+  .btn-full:hover { background:var(--accent-bright); transform:translateY(-2px); }
+
+  footer { text-align:center; padding:28px 24px; font-size:0.77rem; color:var(--muted); border-top:1px solid var(--border); }
+  footer a { color:var(--accent-bright); text-decoration:none; }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:translateY(0)} }
+  .reveal { opacity:0; transform:translateY(26px); transition:opacity 0.65s ease,transform 0.65s ease; }
+  .reveal.visible { opacity:1; transform:none; }
+
+  @media(max-width:600px){ nav{padding:14px 20px;} .proof-strip{gap:28px;} }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">
+    <svg class="logo-mark" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="navBg" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#2a3560"/>
+          <stop offset="100%" stop-color="#151929"/>
+        </radialGradient>
+        <radialGradient id="navGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#e8f0fc" stop-opacity="1"/>
+          <stop offset="50%" stop-color="#849fd8" stop-opacity="0.6"/>
+          <stop offset="100%" stop-color="#5b85c8" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="navSkin" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#e8d5c0"/>
+          <stop offset="100%" stop-color="#d4b89a"/>
+        </linearGradient>
+        <linearGradient id="navSleeve" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#141828"/>
+          <stop offset="100%" stop-color="#1e2840"/>
+        </linearGradient>
+      </defs>
+      <!-- Background rounded rect -->
+      <rect width="44" height="44" rx="6" fill="url(#navBg)"/>
+
+      <!-- Touch glow at center -->
+      <circle cx="22" cy="22" r="5" fill="url(#navGlow)" opacity="0.85"/>
+      <circle cx="22" cy="22" r="2.2" fill="white" opacity="0.9"/>
+      <circle cx="22" cy="22" r="1" fill="white"/>
+
+      <!-- ── HUMAN HAND (left side, pointing right) ── -->
+      <!-- Sleeve/cuff -->
+      <rect x="2" y="28" width="14" height="9" rx="2" fill="url(#navSleeve)"/>
+      <!-- Wrist/palm -->
+      <path d="M14 27 Q16 24 18 23 L20 22.5" stroke="url(#navSkin)" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+      <!-- Index finger pointing toward touch point at cx=22 -->
+      <path d="M17 21 L21.2 21.5" stroke="url(#navSkin)" stroke-width="2.2" stroke-linecap="round"/>
+      <!-- Fingertip rounded -->
+      <circle cx="17" cy="21" r="1.3" fill="#dfc4a8"/>
+      <!-- Curled fingers below -->
+      <path d="M17 23.5 Q18 25 17 26.5" stroke="#d0b898" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+      <path d="M15.5 23 Q16.5 25 15 26" stroke="#c8b090" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+
+      <!-- ── ROBOTIC HAND (right side, pointing left) ── -->
+      <!-- Index finger of robot pointing toward touch -->
+      <path d="M27 21.5 L22.8 21.5" stroke="#5b85c8" stroke-width="2.2" stroke-linecap="round"/>
+      <!-- Knuckle joint -->
+      <rect x="27" y="20.4" width="4" height="2.2" rx="1" fill="#3a5090" stroke="#5b85c8" stroke-width="0.5"/>
+      <!-- Hand body -->
+      <path d="M31 21.5 L34 21" stroke="#3a5090" stroke-width="3" stroke-linecap="round"/>
+      <!-- Other fingers folded -->
+      <path d="M31 22.5 L33 24.5 Q33.5 26 32 26.5" stroke="#3a5090" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+      <path d="M31 23.5 L32 26 Q31.5 27.5 30 27.5" stroke="#2e4280" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+      <!-- Thumb -->
+      <path d="M31.5 20.5 Q33 18.5 33.5 19.5" stroke="#3a5090" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+      <!-- Circuit traces on hand -->
+      <path d="M34 21 L38 19.5 M34 21 L38 22.5" stroke="#5b85c8" stroke-width="1" stroke-linecap="round" opacity="0.8"/>
+      <path d="M36 20 L37 18 M36.5 21.5 L37.5 23" stroke="#3a5090" stroke-width="0.8" stroke-linecap="round" opacity="0.6"/>
+      <!-- Circuit nodes -->
+      <circle cx="38" cy="19.5" r="1.5" fill="#849fd8" opacity="0.9"/>
+      <circle cx="38" cy="22.5" r="1.5" fill="#849fd8" opacity="0.9"/>
+      <circle cx="37" cy="18" r="1" fill="#5b85c8" opacity="0.7"/>
+      <circle cx="37.5" cy="23" r="1" fill="#5b85c8" opacity="0.7"/>
+      <circle cx="35.5" cy="20.8" r="0.8" fill="#aabde8" opacity="0.6"/>
+    </svg>
+    <div class="nav-brand-text">
+      <span class="label">Newsletter</span>
+      <span class="name">Gobernar la IA en la Práctica</span>
+    </div>
+  </div>
+  <a href="#suscribirse" class="nav-cta">Suscribirme</a>
+</nav>
+
+<!-- HERO -->
+<div class="hero" id="inicio">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="particle" style="width:2px;height:2px;background:#89bbec;left:12%;top:72%;--dur:10s;--delay:0s"></div>
+  <div class="particle" style="width:3px;height:3px;background:#5b9bd5;left:28%;top:80%;--dur:12s;--delay:1.2s"></div>
+  <div class="particle" style="width:2px;height:2px;background:#c8d8ec;left:52%;top:82%;--dur:8s;--delay:2.4s"></div>
+  <div class="particle" style="width:2px;height:2px;background:#89bbec;left:72%;top:76%;--dur:13s;--delay:0.6s"></div>
+  <div class="particle" style="width:3px;height:3px;background:#5b9bd5;left:87%;top:79%;--dur:9s;--delay:3s"></div>
+  <div class="particle" style="width:2px;height:2px;background:#c8d8ec;left:18%;top:62%;--dur:15s;--delay:4s"></div>
+
+  <!-- Hero illustration: detailed two hands touching index fingers -->
+  <div class="hero-logo-wrap">
+    <svg class="hero-logo-svg" viewBox="0 0 340 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <!-- Touch point glow: pearl white center fading to circuit blue -->
+        <radialGradient id="hTouchGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%"  stop-color="#f0f5ff" stop-opacity="1"/>
+          <stop offset="25%" stop-color="#d0dcf8" stop-opacity="0.9"/>
+          <stop offset="55%" stop-color="#849fd8" stop-opacity="0.5"/>
+          <stop offset="100%" stop-color="#5b85c8" stop-opacity="0"/>
+        </radialGradient>
+        <!-- Human skin gradient -->
+        <linearGradient id="hSkin" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#e8ceb0"/>
+          <stop offset="60%" stop-color="#d4b490"/>
+          <stop offset="100%" stop-color="#c8a880"/>
+        </linearGradient>
+        <!-- Suit sleeve -->
+        <linearGradient id="hSleeve" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#0e1220"/>
+          <stop offset="50%" stop-color="#1a2238"/>
+          <stop offset="100%" stop-color="#222e4a"/>
+        </linearGradient>
+        <!-- Robot blue gradient -->
+        <linearGradient id="hRobot" x1="100%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#2a3e70"/>
+          <stop offset="100%" stop-color="#1a2848"/>
+        </linearGradient>
+        <!-- Circuit glow -->
+        <filter id="hCircuitGlow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="1.5" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+
+      <!-- ════ TOUCH GLOW at center ════ -->
+      <circle cx="170" cy="70" r="32" fill="url(#hTouchGlow)" opacity="0.7"/>
+      <circle cx="170" cy="70" r="14" fill="#dce8fc" opacity="0.45"/>
+      <circle cx="170" cy="70" r="6"  fill="#eef4ff" opacity="0.65"/>
+      <circle cx="170" cy="70" r="2.5" fill="white"  opacity="0.98"/>
+
+      <!-- ════ HUMAN HAND (left side) ════ -->
+
+      <!-- Sleeve/cuff of suit jacket -->
+      <rect x="4" y="88" width="82" height="36" rx="6" fill="url(#hSleeve)"/>
+      <!-- Shirt cuff white band -->
+      <rect x="72" y="88" width="14" height="12" rx="2" fill="#dde4f0" opacity="0.6"/>
+
+      <!-- Wrist connecting to palm -->
+      <path d="M82 88 Q88 80 92 76 L96 73" stroke="url(#hSkin)" stroke-width="14" stroke-linecap="round" fill="none"/>
+
+      <!-- Palm body -->
+      <ellipse cx="100" cy="72" rx="12" ry="9" fill="url(#hSkin)" transform="rotate(-10, 100, 72)"/>
+
+      <!-- Curled fingers (middle, ring, pinky tucked under) -->
+      <!-- Middle finger curled -->
+      <path d="M104 66 Q108 60 106 55 Q104 50 100 51 Q97 52 97 57 L98 65" fill="url(#hSkin)" stroke="#c8a070" stroke-width="0.5"/>
+      <!-- Ring finger hint -->
+      <path d="M99 67 Q101 62 99 58 Q97 55 94 57 L93 64" fill="url(#hSkin)" stroke="#c0987a" stroke-width="0.5" opacity="0.8"/>
+      <!-- Pinky barely visible -->
+      <path d="M93 68 Q94 64 92 62" stroke="#c0987a" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.7"/>
+      <!-- Thumb tucked -->
+      <path d="M95 76 Q90 80 88 78 Q86 76 88 72" fill="url(#hSkin)" stroke="#c0987a" stroke-width="0.5" opacity="0.8"/>
+
+      <!-- INDEX FINGER — the key element — pointing right toward touch point -->
+      <!-- Finger base to first knuckle -->
+      <path d="M107 68 L125 67" stroke="url(#hSkin)" stroke-width="8" stroke-linecap="round"/>
+      <!-- First knuckle to second -->
+      <path d="M124 67 L148 68.5" stroke="url(#hSkin)" stroke-width="7" stroke-linecap="round"/>
+      <!-- Second knuckle to fingertip -->
+      <path d="M147 68.5 L167.5 69.5" stroke="url(#hSkin)" stroke-width="6" stroke-linecap="round"/>
+      <!-- Rounded fingertip -->
+      <circle cx="167" cy="69.5" r="4.5" fill="#d4aa84"/>
+      <!-- Knuckle lines for realism -->
+      <path d="M124 64 Q126 67 124 70" stroke="#c8a070" stroke-width="1" fill="none" opacity="0.6"/>
+      <path d="M147 65 Q149 68.5 147 72" stroke="#c0987a" stroke-width="0.8" fill="none" opacity="0.5"/>
+      <!-- Fingernail at tip -->
+      <ellipse cx="166" cy="67" rx="3" ry="2" fill="#e8c8a0" opacity="0.7"/>
+
+
+      <!-- ════ ROBOTIC HAND (right side) ════ -->
+
+      <!-- INDEX FINGER — pointing left toward touch point -->
+      <!-- Fingertip segment -->
+      <rect x="172" y="65.5" width="22" height="9" rx="4" fill="url(#hRobot)" stroke="#5b85c8" stroke-width="1"/>
+      <!-- Knuckle joint 1 -->
+      <rect x="193" y="64" width="16" height="12" rx="3" fill="url(#hRobot)" stroke="#4a78b8" stroke-width="0.8"/>
+      <!-- Knuckle joint 2 (larger) -->
+      <rect x="208" y="63" width="20" height="14" rx="3.5" fill="url(#hRobot)" stroke="#4070a8" stroke-width="0.8"/>
+      <!-- Circuit lines on index finger -->
+      <path d="M175 70 L190 70 M196 70 L206 70" stroke="#849fd8" stroke-width="0.8" opacity="0.8" filter="url(#hCircuitGlow)"/>
+      <path d="M183 67 L183 73 M200 66 L200 74" stroke="#5b85c8" stroke-width="0.6" opacity="0.5"/>
+      <!-- Joint connector dots -->
+      <circle cx="193" cy="70" r="2" fill="#849fd8"/>
+      <circle cx="208" cy="70" r="2.2" fill="#7090c8"/>
+
+      <!-- Hand body / metacarpal -->
+      <path d="M226 63 Q238 60 242 65 Q246 70 242 76 Q238 80 226 77 L226 63Z" fill="url(#hRobot)" stroke="#3a6098" stroke-width="1"/>
+
+      <!-- Other fingers (folded/curled downward) -->
+      <!-- Middle finger -->
+      <path d="M230 63 L234 55 Q236 50 240 51 Q244 52 243 57 L238 63" fill="url(#hRobot)" stroke="#4a78b8" stroke-width="0.7"/>
+      <!-- Ring finger -->
+      <path d="M234 64 L237 57 Q239 52 242 54 L241 63" fill="url(#hRobot)" stroke="#3a6098" stroke-width="0.7" opacity="0.8"/>
+      <!-- Pinky -->
+      <path d="M237 66 L239 60 Q240 56 243 57" stroke="#3a6098" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.7"/>
+      <!-- Thumb -->
+      <path d="M228 76 Q224 82 222 80 Q220 77 222 73" fill="url(#hRobot)" stroke="#4a78b8" stroke-width="0.7" opacity="0.8"/>
+      <!-- Circuit lines on hand body -->
+      <path d="M228 68 L240 66 M228 72 L240 74" stroke="#5b85c8" stroke-width="0.8" opacity="0.6"/>
+      <path d="M232 65 L232 75 M237 65 L237 75" stroke="#4a70a8" stroke-width="0.6" opacity="0.4"/>
+
+      <!-- Circuit traces extending from hand to right edge -->
+      <path d="M244 65 L268 58" stroke="#3a5e98" stroke-width="1.8" stroke-linecap="round" opacity="0.8" filter="url(#hCircuitGlow)"/>
+      <path d="M244 70 L275 70" stroke="#4a70b8" stroke-width="1.8" stroke-linecap="round" opacity="0.8" filter="url(#hCircuitGlow)"/>
+      <path d="M244 76 L268 83" stroke="#3a5e98" stroke-width="1.8" stroke-linecap="round" opacity="0.8" filter="url(#hCircuitGlow)"/>
+      <!-- Secondary traces -->
+      <path d="M260 58 L264 52 M268 70 L272 64 M260 83 L264 89" stroke="#5b85c8" stroke-width="1" stroke-linecap="round" opacity="0.5"/>
+      <path d="M275 70 L279 64 M275 70 L279 76" stroke="#4a70b8" stroke-width="1" stroke-linecap="round" opacity="0.5"/>
+
+      <!-- Circuit nodes (glowing dots) -->
+      <circle cx="268" cy="58" r="4.5" fill="#849fd8" opacity="0.9" filter="url(#hCircuitGlow)"/>
+      <circle cx="275" cy="70" r="5"   fill="#aabde8" opacity="0.85" filter="url(#hCircuitGlow)"/>
+      <circle cx="268" cy="83" r="4.5" fill="#849fd8" opacity="0.9" filter="url(#hCircuitGlow)"/>
+      <circle cx="279" cy="64" r="2.8" fill="#5b85c8" opacity="0.75"/>
+      <circle cx="279" cy="76" r="2.8" fill="#5b85c8" opacity="0.75"/>
+      <circle cx="264" cy="52" r="2.5" fill="#7090c8" opacity="0.7"/>
+      <circle cx="264" cy="89" r="2.5" fill="#7090c8" opacity="0.7"/>
+      <circle cx="310" cy="58" r="3.5" fill="#849fd8" opacity="0.6"/>
+      <circle cx="318" cy="70" r="4"   fill="#aabde8" opacity="0.55"/>
+      <circle cx="310" cy="83" r="3.5" fill="#849fd8" opacity="0.6"/>
+      <!-- Far traces fading out -->
+      <path d="M279 64 L308 58 M279 76 L308 83 M279 70 L318 70" stroke="#3a5890" stroke-width="1.3" stroke-linecap="round" opacity="0.4"/>
+    </svg>
+  </div>
+
+  <p class="hero-eyebrow">Newsletter semanal · Gobernanza de IA · América Latina</p>
+
+  <h1 class="hero-title">
+    Gobernar la IA<br><span class="highlight">en la Práctica</span>
+  </h1>
+  <p class="hero-subtitle">Sin hype. Con criterio. Para líderes que deciden.</p>
+
+  <p class="hero-desc">
+    Reflexiones humanas, información curada y herramientas prácticas para líderes empresariales y directores públicos que quieren implementar IA con confianza jurídica y estratégica.
+  </p>
+
+  <div id="suscribirse" style="width:100%;max-width:540px;position:relative;z-index:2;">
+    <iframe width="540" height="305" src="https://f3d4f19e.sibforms.com/serve/MUIFAGcXfFcXvq8gqjL34kJyF6QFPYBOKHKBCkTucECL7-Ki_X2txv_KH6RqDgn5oMhjCXWrwFWbBL2EDnF2pwxrbv9nMG6hWxYI3DGC3nacsM0yRpCdXgCqyHVtLQI4C-PlnuXFvuSx8FpbRS_Uoj1XsuJ-2Oti-vPuLyDui20Vl5dEbHFRlw7wzWarWy74JDii3p006lR8jXhkbw==" frameborder="0" scrolling="auto" allowfullscreen style="display:block;margin-left:auto;margin-right:auto;max-width:100%;border-radius:4px;"></iframe>
+    <p style="font-size:0.78rem;color:var(--muted);display:flex;align-items:center;gap:8px;justify-content:center;margin-top:12px;">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Sin spam. Cada semana, 10 minutos de contenido que vale tu tiempo.
+    </p>
+  </div>
+</div>
+
+<!-- PROOF STRIP -->
+<div class="proof-strip">
+  <div class="proof-item reveal"><div class="proof-number">+5.500</div><div class="proof-label">Suscriptores</div></div>
+  <div class="proof-item reveal"><div class="proof-number">Semanal</div><div class="proof-label">Frecuencia</div></div>
+  <div class="proof-item reveal"><div class="proof-number">10 min</div><div class="proof-label">Lectura por edición</div></div>
+  <div class="proof-item reveal"><div class="proof-number">LATAM</div><div class="proof-label">Enfoque regional</div></div>
+</div>
+
+<!-- FOR WHOM -->
+<div class="section">
+  <div class="reveal">
+    <p class="section-eyebrow">¿Para quién es esto?</p>
+    <h2 class="section-title">Hecho para quienes<br>toman las decisiones</h2>
+    <p class="section-body">No es contenido técnico para desarrolladores. Es inteligencia estratégica para líderes que gobiernan organizaciones en un mundo donde la IA ya no es opcional.</p>
+  </div>
+
+  <div class="audience-grid">
+    <div class="audience-card reveal">
+      <div class="audience-icon">🏢</div>
+      <div class="audience-title">Líderes del Sector Privado y Juntas Directivas</div>
+      <div class="audience-desc">CEOs, directores de tecnología, miembros de junta y gerentes de riesgo que necesitan convertir la IA en ventaja competitiva sin exponer su organización a riesgos legales, éticos o reputacionales.</div>
+      <ul class="audience-list">
+        <li>Líderes empresariales con poder de decisión en tecnología</li>
+        <li>Juntas directivas que integran IA a su supervisión estratégica</li>
+        <li>C-Suite buscando ser organizaciones AI-Thriven</li>
+      </ul>
+    </div>
+    <div class="audience-card reveal">
+      <div class="audience-icon">🏛️</div>
+      <div class="audience-title">Directores de Entidades Públicas</div>
+      <div class="audience-desc">Funcionarios con poder de decisión que deben desplegar soluciones de alto impacto social con marcos normativos sólidos, supervisión humana garantizada y blindaje ante reclamaciones por discriminación algorítmica.</div>
+      <ul class="audience-list">
+        <li>Directores de entidades distritales y nacionales</li>
+        <li>Funcionarios responsables de transformación digital pública</li>
+        <li>Líderes de política pública de innovación y tecnología</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- WHAT YOU GET -->
+<div class="section">
+  <div class="content-split">
+    <div>
+      <div class="reveal">
+        <p class="section-eyebrow">Qué recibes cada semana</p>
+        <h2 class="section-title">Contenido diseñado para derribar barreras</h2>
+        <p class="section-body">Mientras el internet se satura de contenido generado por IA de baja calidad, aquí encontrarás análisis elaborado por un ser humano, orientado a la acción.</p>
+      </div>
+      <ul class="content-list">
+        <li class="reveal"><div class="icon">📰</div><div class="text"><strong>Lo que el C-Suite debe saber esta semana</strong><span>3 noticias de regulación, ética y tecnología con análisis estratégico aplicado a tu contexto en LATAM.</span></div></li>
+        <li class="reveal"><div class="icon">🔬</div><div class="text"><strong>Análisis de fondo</strong><span>Lectura profunda de marcos regulatorios (OCDE, NIST, AI Act) traducidos a decisiones concretas de gestión.</span></div></li>
+        <li class="reveal"><div class="icon">📚</div><div class="text"><strong>Insumos para la Alta Dirección</strong><span>Lo mejor de la semana en libros, artículos y recursos filtrados por su relevancia estratégica real.</span></div></li>
+        <li class="reveal"><div class="icon">❓</div><div class="text"><strong>La pregunta de la semana para tu junta</strong><span>Una pregunta concreta para llevar a tu próxima sesión directiva y generar conversación de alto valor.</span></div></li>
+      </ul>
+    </div>
+
+    <div class="edition-card reveal">
+      <div class="edition-tag">Última edición</div>
+      <div class="edition-title">La debida diligencia para una IA Responsable: el nuevo estándar OCDE</div>
+      <ul class="edition-toc">
+        <li><div class="num">1</div>Bogotá blindará a la niñez con IA: gobernanza como inversión estratégica</li>
+        <li><div class="num">2</div>Alianza UNESCO-CENIA: estándares éticos para Latinoamérica</li>
+        <li><div class="num">3</div>NIST establece el estándar para Agentes de IA autónomos</li>
+        <li><div class="num">4</div>Las 6 etapas de debida diligencia de la OCDE para directivos</li>
+        <li><div class="num">5</div>La pregunta de la semana: ¿capturamos el 5% o el potencial real?</li>
+      </ul>
+      <div class="quote-block">"Si la IA ya cubre el 70% de las tareas de tus profesionales más cualificados, pero tu organización solo captura el 5% de ese valor: ¿estás gobernando la IA o simplemente teniendo acceso a ella?"</div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- BARRIERS -->
+<div class="section">
+  <div class="reveal">
+    <p class="section-eyebrow">Por qué este newsletter existe</p>
+    <h2 class="section-title">Las tres barreras que frenan<br>la gobernanza de IA</h2>
+  </div>
+  <div class="barriers-grid">
+    <div class="barrier-card reveal"><div class="barrier-num">Barrera 01</div><div class="barrier-title">Vacío y complejidad normativa</div><div class="barrier-text">AI Act europeo, NIST, lineamientos OCDE, regulación local... ¿cómo navegar marcos que avanzan más rápido que tu capacidad de implementarlos? Aquí te damos el mapa ejecutivo.</div></div>
+    <div class="barrier-card reveal"><div class="barrier-num">Barrera 02</div><div class="barrier-title">Desconocimiento de riesgos y oportunidades</div><div class="barrier-text">La mayoría de los líderes no identifican los riesgos legales, éticos y operativos al desplegar IA, ni las oportunidades concretas que están perdiendo cada semana.</div></div>
+    <div class="barrier-card reveal"><div class="barrier-num">Barrera 03</div><div class="barrier-title">Percepción de costo, no de inversión</div><div class="barrier-text">La gobernanza de IA se percibe como cumplimiento burocrático. En realidad es el sistema que protege de reclamaciones, reduce fricción regulatoria y genera confianza de mercado.</div></div>
+  </div>
+</div>
+
+<!-- SERVICES -->
+<div class="services-wrap">
+  <div class="section">
+    <div class="services-intro reveal">
+      <p class="section-eyebrow" style="text-align:center;">¿Quieres ir más allá del newsletter?</p>
+      <h2 class="section-title" style="text-align:center;">¿Quieres llevar la gobernanza<br>de la IA a la práctica?</h2>
+      <p class="section-body" style="max-width:540px;margin:0 auto;text-align:center;">Aquí tienes 3 formas en las que puedo ayudarte a convertir la incertidumbre en decisiones confiables.</p>
+    </div>
+
+    <div class="services-grid">
+
+      <div class="service-card reveal">
+        <div class="service-num">Forma 01</div>
+        <div class="service-icon">📅</div>
+        <div class="service-title">Conversemos sobre tu estrategia de IA</div>
+        <p class="service-desc">Solo abro <strong style="color:var(--white)">3 espacios semanales sin costo</strong> para conversar con líderes sobre su estrategia de IA.</p>
+        <p class="service-desc" style="margin-top:12px;color:#8aa4c0;font-size:0.84rem;">Esta llamada es para ti si:</p>
+        <ul class="service-list">
+          <li>Eres un líder empresarial o funcionario público con poder de decisión</li>
+          <li>Buscas convertir tu organización en <strong style="color:var(--accent-light)">AI-Thriven</strong>: una empresa que prospera con la IA e implementa gobernanza como sistema de dirección</li>
+          <li>Quieres que la innovación en tu entidad sea confiable y jurídicamente segura</li>
+        </ul>
+        <a href="https://calendly.com/josedanielsanchezq/evaluacion-de-necesidades-empresariales" target="_blank" class="service-cta">Reservar espacio →</a>
+      </div>
+
+      <div class="service-card reveal">
+        <div class="service-num">Forma 02</div>
+        <div class="service-icon">🔎</div>
+        <div class="service-title">Diagnóstico gratuito de madurez en IA responsable</div>
+        <p class="service-desc">Descubre qué tan preparada está tu organización para gobernar la IA. Recibirás en <strong style="color:var(--white)">24 horas un informe ejecutivo</strong> con:</p>
+        <ul class="service-list">
+          <li>Un mapa de dónde está tu organización hoy</li>
+          <li>Las prioridades para convertirte en una organización AI-Thriven</li>
+          <li>Quick wins para empezar a implementar gobernanza de IA</li>
+        </ul>
+        <p class="service-desc" style="margin-top:14px;font-size:0.83rem;color:#7090b0;">Escríbeme con la palabra <strong style="color:var(--accent-light)">"DIAGNÓSTICO"</strong> y te envío la información.</p>
+        <a href="/cdn-cgi/l/email-protection#375d5844525356595e525b445659545f524d4677505a565e5b1954585a084442555d5254430a737e767079f4a464637e7478" class="service-cta">Solicitar diagnóstico →</a>
+      </div>
+
+      <div class="service-card reveal">
+        <div class="service-num">Forma 03</div>
+        <div class="service-icon">🎓</div>
+        <div class="service-title">Taller ejecutivo: De la experimentación al valor</div>
+        <p class="service-desc">Para empresas y entidades públicas que quieren implementar IA generativa o agentes de IA para generar valor real. Diseñado para equipos directivos.</p>
+        <p class="service-desc" style="margin-top:12px;color:#8aa4c0;font-size:0.84rem;">En este taller abordamos:</p>
+        <ul class="service-list">
+          <li>Cómo funcionan la IA generativa y los agentes de IA</li>
+          <li>Qué oportunidades reales existen para tu organización</li>
+          <li>Qué riesgos técnicos, legales y de gobernanza deben gestionarse</li>
+          <li>Cómo comenzar a implementar IA de forma confiable y estratégica</li>
+        </ul>
+        <a href="/cdn-cgi/l/email-protection#2b4144584e4f4a45424e47584a4548434e515a6b4c464a42470548444614585e49414e485f167f4a47474e590b4e414e485e5f425d440b626a" class="service-cta">Escribirme →</a>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- AUTHOR -->
+<div style="border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:rgba(22,36,62,0.4);">
+  <div class="author-inner">
+    <div class="author-avatar reveal">JS</div>
+    <div class="reveal">
+      <p class="author-role">Autor y consultor en gobernanza de IA</p>
+      <h3 class="author-name">José Daniel Sánchez Quiñones</h3>
+      <p class="author-bio">Especialista en gobernanza de inteligencia artificial para el sector público y privado en América Latina. Ayuda a organizaciones a convertirse en empresas <strong>AI-Thriven</strong>: aquellas que no solo adoptan IA, sino que la gobiernan como un sistema de dirección para tomar decisiones confiables y jurídicamente seguras.</p>
+      <br>
+      <p class="author-bio">Su misión es transformar la incertidumbre legal y regulatoria en procesos concretos que conviertan la gobernanza de IA en una ventaja competitiva, no en un obstáculo.</p>
+    </div>
+  </div>
+</div>
+
+<!-- CTA BOTTOM -->
+<div class="cta-bottom">
+  <div class="cta-glow"></div>
+  <p class="section-eyebrow reveal" style="text-align:center;">Empieza hoy</p>
+  <h2 class="section-title reveal" style="max-width:540px;margin:14px auto 0;text-align:center;">Gobernar la IA empieza<br>por entenderla</h2>
+  <p class="section-body reveal" style="max-width:460px;margin:18px auto 40px;text-align:center;">Únete a más de 5.500 líderes empresariales y directores públicos que reciben cada semana inteligencia estratégica para dirigir con criterio y confianza.</p>
+  <div class="reveal" style="width:100%;max-width:540px;margin:0 auto;">
+    <iframe width="540" height="305" src="https://f3d4f19e.sibforms.com/serve/MUIFAGcXfFcXvq8gqjL34kJyF6QFPYBOKHKBCkTucECL7-Ki_X2txv_KH6RqDgn5oMhjCXWrwFWbBL2EDnF2pwxrbv9nMG6hWxYI3DGC3nacsM0yRpCdXgCqyHVtLQI4C-PlnuXFvuSx8FpbRS_Uoj1XsuJ-2Oti-vPuLyDui20Vl5dEbHFRlw7wzWarWy74JDii3p006lR8jXhkbw==" frameborder="0" scrolling="auto" allowfullscreen style="display:block;margin-left:auto;margin-right:auto;max-width:100%;border-radius:4px;"></iframe>
+    <p style="font-size:0.76rem;color:var(--muted);margin-top:8px;text-align:center;">Sin spam. Puedes cancelar cuando quieras.</p>
+  </div>
+</div>
+
+<footer>
+  <p>© 2026 <strong>Gobernar la IA en la Práctica</strong> · José Daniel Sánchez Quiñones ·
+  <a href="https://calendly.com/josedanielsanchezq/evaluacion-de-necesidades-empresariales" target="_blank">Agendar llamada estratégica</a></p>
+</footer>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+  const reveals = document.querySelectorAll('.reveal');
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        setTimeout(() => e.target.classList.add('visible'), i * 65);
+        obs.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  reveals.forEach(el => obs.observe(el));
