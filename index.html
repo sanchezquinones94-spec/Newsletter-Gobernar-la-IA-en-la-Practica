@@ -473,22 +473,25 @@ async function suscribir() {
   btn.disabled = true;
 
   try {
-    const res = await fetch('/.netlify/functions/subscribe', {
+    const res = await fetch('https://api.brevo.com/v3/contacts', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email })
+      headers: {
+        'Content-Type': 'application/json',
+        'api-key': 'xsmtpsib-859409c24b4e91638c293918661c8cac351fa84fd7810e2ff27c28c8b191b78c-WLKNv3DPfh0AQpwW'
+      },
+      body: JSON.stringify({ email, listIds: [2], updateEnabled: true })
     });
-    const data = await res.json();
+    const data = res.status !== 204 ? await res.json() : {};
 
-    if (res.ok) {
+    if (res.status === 201 || res.status === 204 || (res.status === 400 && data.code === 'duplicate_parameter')) {
       wrap.style.display = 'none';
       msg.style.display = 'block';
       msg.style.background = 'rgba(60,180,100,0.1)';
       msg.style.border = '1px solid rgba(60,180,100,0.3)';
       msg.style.color = '#7ecf9a';
-      msg.textContent = '✓ ¡Listo! Revisa tu bandeja de entrada para confirmar tu suscripción.';
+      msg.textContent = res.status === 400 ? '✓ Este email ya está suscrito. ¡Gracias!' : '✓ ¡Listo! Revisa tu bandeja de entrada para confirmar tu suscripción.';
     } else {
-      throw new Error(data.error || 'Error');
+      throw new Error(data.message || 'Error');
     }
   } catch(e) {
     btn.textContent = 'Suscribirme →';
@@ -626,42 +629,6 @@ async function suscribir() {
     <a href="https://www.linkedin.com/build-relation/newsletter-follow?entityUrn=741323058823866777" target="_blank" class="linkedin-btn reveal">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
       Ver todas las ediciones en LinkedIn →
-    </a>
-  </div>
-</div>
-
-<!-- RESOURCES -->
-<hr class="divider">
-<div class="section">
-  <div class="reveal">
-    <p class="section-eyebrow">Más recursos</p>
-    <h2 class="section-title">Artículos y publicaciones</h2>
-    <p class="section-body">Análisis y reflexiones publicados en medios especializados sobre derecho, tecnología y gobernanza de inteligencia artificial.</p>
-  </div>
-  <div class="resources-grid">
-    <a href="#" target="_blank" class="resource-card reveal">
-      <div class="resource-tag">📝 Blog / Artículo</div>
-      <div class="resource-title">Próximamente: artículos y publicaciones</div>
-      <div class="resource-source">Puedes agregar aquí los enlaces a tus blogs en medios especializados</div>
-      <div class="resource-link">Leer artículo <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></div>
-    </a>
-    <a href="#" target="_blank" class="resource-card reveal">
-      <div class="resource-tag">📝 Blog / Artículo</div>
-      <div class="resource-title">Próximamente: artículos y publicaciones</div>
-      <div class="resource-source">Puedes agregar aquí los enlaces a tus blogs en medios especializados</div>
-      <div class="resource-link">Leer artículo <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></div>
-    </a>
-    <a href="#" target="_blank" class="resource-card reveal">
-      <div class="resource-tag">📝 Blog / Artículo</div>
-      <div class="resource-title">Próximamente: artículos y publicaciones</div>
-      <div class="resource-source">Puedes agregar aquí los enlaces a tus blogs en medios especializados</div>
-      <div class="resource-link">Leer artículo <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></div>
-    </a>
-    <a href="#" target="_blank" class="resource-card reveal">
-      <div class="resource-tag">📝 Blog / Artículo</div>
-      <div class="resource-title">Próximamente: artículos y publicaciones</div>
-      <div class="resource-source">Puedes agregar aquí los enlaces a tus blogs en medios especializados</div>
-      <div class="resource-link">Leer artículo <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></div>
     </a>
   </div>
 </div>
