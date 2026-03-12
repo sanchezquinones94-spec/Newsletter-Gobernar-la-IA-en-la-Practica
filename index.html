@@ -393,7 +393,7 @@
       <span class="name">Gobernar la IA en la Práctica</span>
     </div>
   </div>
-  <a href="#suscribirse" class="nav-cta">Suscribirme</a>
+  <a href="https://f3d4f19e.sibforms.com/serve/MUIFAGcXfFcXvq8gqjL34kJyF6QFPYBOKHKBCkTucECL7-Ki_X2txv_KH6RqDgn5oMhjCXWrwFWbBL2EDnF2pwxrbv9nMG6hWxYI3DGC3nacsM0yRpCdXgCqyHVtLQI4C-PlnuXFvuSx8FpbRS_Uoj1XsuJ-2Oti-vPuLyDui20Vl5dEbHFRlw7wzWarWy74JDii3p006lR8jXhkbw==" target="_blank" class="nav-cta">Suscribirme</a>
 </nav>
 
 <!-- HERO -->
@@ -427,15 +427,103 @@
   </p>
 
   <div id="suscribirse" style="width:100%;max-width:460px;position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:12px;">
-    <a href="https://f3d4f19e.sibforms.com/serve/MUIFAGcXfFcXvq8gqjL34kJyF6QFPYBOKHKBCkTucECL7-Ki_X2txv_KH6RqDgn5oMhjCXWrwFWbBL2EDnF2pwxrbv9nMG6hWxYI3DGC3nacsM0yRpCdXgCqyHVtLQI4C-PlnuXFvuSx8FpbRS_Uoj1XsuJ-2Oti-vPuLyDui20Vl5dEbHFRlw7wzWarWy74JDii3p006lR8jXhkbw==" target="_blank" style="display:block;width:100%;padding:16px;background:var(--accent);color:#fff;text-align:center;font-family:'DM Sans',sans-serif;font-weight:500;font-size:1rem;letter-spacing:0.05em;text-decoration:none;transition:background 0.25s;" onmouseover="this.style.background='#849fd8'" onmouseout="this.style.background='var(--accent)'">
-      Recibir el newsletter por email →
-    </a>
+
+    <!-- Formulario inline Brevo -->
+    <div style="width:100%;display:flex;background:rgba(255,255,255,0.04);border:1px solid var(--border-strong);transition:border-color 0.3s;" id="hero-form-wrap">
+      <input
+        type="email"
+        id="hero-email"
+        placeholder="tu@email.com"
+        style="flex:1;background:transparent;border:none;outline:none;padding:14px 18px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:0.95rem;"
+        onkeydown="if(event.key==='Enter') suscribir()"
+      />
+      <button
+        onclick="suscribir()"
+        style="padding:14px 22px;background:var(--accent);color:#fff;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500;font-size:0.88rem;letter-spacing:0.06em;white-space:nowrap;transition:background 0.25s;"
+        onmouseover="this.style.background='#849fd8'"
+        onmouseout="this.style.background='var(--accent)'"
+        id="hero-btn"
+      >Suscribirme →</button>
+    </div>
+
+    <!-- Mensaje de resultado -->
+    <div id="hero-msg" style="display:none;width:100%;padding:13px 18px;font-size:0.88rem;text-align:center;"></div>
+
     <p style="font-size:0.78rem;color:var(--muted);display:flex;align-items:center;gap:8px;justify-content:center;">
       <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
       Recibirás cada edición directamente en tu bandeja de entrada. Sin spam.
     </p>
+
   </div>
 </div>
+
+<script>
+async function suscribir() {
+  const emailInput = document.getElementById('hero-email');
+  const btn        = document.getElementById('hero-btn');
+  const msg        = document.getElementById('hero-msg');
+  const wrap       = document.getElementById('hero-form-wrap');
+  const email      = emailInput.value.trim();
+
+  // Validación básica
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    msg.style.display = 'block';
+    msg.style.background = 'rgba(200,80,80,0.12)';
+    msg.style.border = '1px solid rgba(200,80,80,0.3)';
+    msg.style.color = '#e88';
+    msg.textContent = 'Por favor ingresa un email válido.';
+    return;
+  }
+
+  btn.textContent = 'Enviando...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('https://api.brevo.com/v3/contacts', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'api-key': 'xsmtpsib-859409c24b4e91638c293918661c8cac351fa84fd7810e2ff27c28c8b191b78c-WLKNv3DPfh0AQpwW'
+      },
+      body: JSON.stringify({
+        email: email,
+        listIds: [2],
+        updateEnabled: true
+      })
+    });
+
+    if (res.ok || res.status === 204) {
+      wrap.style.display = 'none';
+      msg.style.display = 'block';
+      msg.style.background = 'rgba(60,180,100,0.1)';
+      msg.style.border = '1px solid rgba(60,180,100,0.3)';
+      msg.style.color = '#7ecf9a';
+      msg.textContent = '✓ ¡Listo! Revisa tu bandeja de entrada para confirmar tu suscripción.';
+    } else {
+      const data = await res.json();
+      // Si el contacto ya existe, también es éxito
+      if (res.status === 400 && data.code === 'duplicate_parameter') {
+        wrap.style.display = 'none';
+        msg.style.display = 'block';
+        msg.style.background = 'rgba(60,180,100,0.1)';
+        msg.style.border = '1px solid rgba(60,180,100,0.3)';
+        msg.style.color = '#7ecf9a';
+        msg.textContent = '✓ Este email ya está suscrito. ¡Gracias!';
+      } else {
+        throw new Error(data.message || 'Error');
+      }
+    }
+  } catch(e) {
+    btn.textContent = 'Suscribirme →';
+    btn.disabled = false;
+    msg.style.display = 'block';
+    msg.style.background = 'rgba(200,80,80,0.12)';
+    msg.style.border = '1px solid rgba(200,80,80,0.3)';
+    msg.style.color = '#e88';
+    msg.textContent = 'Hubo un error. Intenta de nuevo o escríbeme directamente.';
+  }
+}
+</script>
 
 <!-- PROOF STRIP -->
 <div class="proof-strip">
@@ -540,7 +628,7 @@
   <div class="editions-grid">
 
     <!-- ═══ EDICIÓN 1 — pega aquí el link de Notion ═══ -->
-    <a href="https://real-gym-2b9.notion.site/10-La-debida-diligencia-para-una-IA-Responsable-de-la-OCDE-el-nuevo-est-ndar-para-operar-a-nivel-gl-3118cae9e50180d3a788f5ebe4544b95" target="_blank" class="edition-preview reveal">
+    <a href="PEGA-AQUÍ-LINK-NOTION-ED1" target="_blank" class="edition-preview reveal">
       <div class="edition-preview-num">Edición más reciente</div>
       <div class="edition-preview-title">La debida diligencia para una IA Responsable: el nuevo estándar OCDE</div>
       <div class="edition-preview-desc">Las 6 etapas de debida diligencia de la OCDE para directivos, y cómo aplicarlas en tu organización para gobernar la IA de forma responsable.</div>
@@ -652,7 +740,7 @@
           <li>Quick wins para empezar a implementar gobernanza de IA</li>
         </ul>
         <p class="service-desc" style="margin-top:14px;font-size:0.85rem;color:#9cb4cc;">Envíame un email con el asunto <strong style="color:var(--accent-light)">"DIAGNÓSTICO"</strong> y tu nombre + empresa, y te respondo en menos de 24 horas con los siguientes pasos.</p>
-        <a href="mailto:jose@gobernarlaia.com?subject=DIAGNÓSTICO&body=Hola José Daniel,%0A%0AMe gustaría solicitar el diagnóstico gratuito de madurez en IA responsable para mi organización.%0A%0ANombre:%0AEmpresa / entidad:%0ASector:%0A%0AQuedo atento a tu respuesta." class="service-cta" style="margin-top:auto;">✉ Solicitar diagnóstico por email →</a>
+        <a href="/cdn-cgi/l/email-protection#5e34312d3b1e39313c3b2c303f2c323f373f703d3133612d2b3c343b3d2a631a171f19109dcd0d0a171d11783c313a27631631323f7e14312d9df77e1a3f30373b32727b6e1f7b6e1f133b7e392b2d2a3f2c9df33f7e2d3132373d372a3f2c7e3b327e3a373f39309ded2d2a373d317e392c3f2a2b372a317e3a3b7e333f3a2b2c3b247e3b307e171f7e2c3b2d2e31302d3f3c323b7e2e3f2c3f7e33377e312c393f3037243f3d379ded30707b6e1f7b6e1f1031333c2c3b647b6e1f1b332e2c3b2d3f7e717e3b302a373a3f3a647b6e1f0d3b3d2a312c647b6e1f7b6e1f0f2b3b3a317e3f2a3b302a317e3f7e2a2b7e2c3b2d2e2b3b2d2a3f70" class="service-cta" style="margin-top:auto;">✉ Solicitar diagnóstico por email →</a>
       </div>
 
       <div class="service-card reveal">
@@ -723,19 +811,5 @@
   <a href="https://calendly.com/josedanielsanchezq/evaluacion-de-necesidades-empresariales" target="_blank">Agendar llamada estratégica</a></p>
 </footer>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
-  const reveals = document.querySelectorAll('.reveal');
-  const obs = new IntersectionObserver((entries) => {
-    entries.forEach((e, i) => {
-      if (e.isIntersecting) {
-        setTimeout(() => e.target.classList.add('visible'), i * 65);
-        obs.unobserve(e.target);
-      }
-    });
-  }, { threshold: 0.1 });
-  reveals.forEach(el => obs.observe(el));
-
-</script>
-
-</body>
-</html>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+  con
