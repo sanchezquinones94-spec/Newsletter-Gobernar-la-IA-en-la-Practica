@@ -428,8 +428,7 @@
 
   <div id="suscribirse" style="width:100%;max-width:460px;position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:12px;">
 
-    <!-- Formulario inline Brevo -->
-    <div style="width:100%;display:flex;background:rgba(255,255,255,0.04);border:1px solid var(--border-strong);transition:border-color 0.3s;" id="hero-form-wrap">
+    <div style="width:100%;display:flex;background:rgba(255,255,255,0.04);border:1px solid var(--border-strong);" id="hero-form-wrap">
       <input
         type="email"
         id="hero-email"
@@ -437,17 +436,14 @@
         style="flex:1;background:transparent;border:none;outline:none;padding:14px 18px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:0.95rem;"
         onkeydown="if(event.key==='Enter') suscribir()"
       />
-      <button
-        onclick="suscribir()"
+      <button onclick="suscribir()" id="hero-btn"
         style="padding:14px 22px;background:var(--accent);color:#fff;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500;font-size:0.88rem;letter-spacing:0.06em;white-space:nowrap;transition:background 0.25s;"
-        onmouseover="this.style.background='#849fd8'"
-        onmouseout="this.style.background='var(--accent)'"
-        id="hero-btn"
-      >Suscribirme →</button>
+        onmouseover="this.style.background='#849fd8'" onmouseout="this.style.background='var(--accent)'">
+        Suscribirme →
+      </button>
     </div>
 
-    <!-- Mensaje de resultado -->
-    <div id="hero-msg" style="display:none;width:100%;padding:13px 18px;font-size:0.88rem;text-align:center;"></div>
+    <div id="hero-msg" style="display:none;width:100%;padding:13px 18px;font-size:0.88rem;text-align:center;border-radius:2px;"></div>
 
     <p style="font-size:0.78rem;color:var(--muted);display:flex;align-items:center;gap:8px;justify-content:center;">
       <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
@@ -459,13 +455,11 @@
 
 <script>
 async function suscribir() {
-  const emailInput = document.getElementById('hero-email');
-  const btn        = document.getElementById('hero-btn');
-  const msg        = document.getElementById('hero-msg');
-  const wrap       = document.getElementById('hero-form-wrap');
-  const email      = emailInput.value.trim();
+  const email = document.getElementById('hero-email').value.trim();
+  const btn   = document.getElementById('hero-btn');
+  const msg   = document.getElementById('hero-msg');
+  const wrap  = document.getElementById('hero-form-wrap');
 
-  // Validación básica
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     msg.style.display = 'block';
     msg.style.background = 'rgba(200,80,80,0.12)';
@@ -479,20 +473,14 @@ async function suscribir() {
   btn.disabled = true;
 
   try {
-    const res = await fetch('https://api.brevo.com/v3/contacts', {
+    const res = await fetch('/.netlify/functions/subscribe', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'api-key': 'xsmtpsib-859409c24b4e91638c293918661c8cac351fa84fd7810e2ff27c28c8b191b78c-WLKNv3DPfh0AQpwW'
-      },
-      body: JSON.stringify({
-        email: email,
-        listIds: [2],
-        updateEnabled: true
-      })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
     });
+    const data = await res.json();
 
-    if (res.ok || res.status === 204) {
+    if (res.ok) {
       wrap.style.display = 'none';
       msg.style.display = 'block';
       msg.style.background = 'rgba(60,180,100,0.1)';
@@ -500,18 +488,7 @@ async function suscribir() {
       msg.style.color = '#7ecf9a';
       msg.textContent = '✓ ¡Listo! Revisa tu bandeja de entrada para confirmar tu suscripción.';
     } else {
-      const data = await res.json();
-      // Si el contacto ya existe, también es éxito
-      if (res.status === 400 && data.code === 'duplicate_parameter') {
-        wrap.style.display = 'none';
-        msg.style.display = 'block';
-        msg.style.background = 'rgba(60,180,100,0.1)';
-        msg.style.border = '1px solid rgba(60,180,100,0.3)';
-        msg.style.color = '#7ecf9a';
-        msg.textContent = '✓ Este email ya está suscrito. ¡Gracias!';
-      } else {
-        throw new Error(data.message || 'Error');
-      }
+      throw new Error(data.error || 'Error');
     }
   } catch(e) {
     btn.textContent = 'Suscribirme →';
@@ -520,7 +497,7 @@ async function suscribir() {
     msg.style.background = 'rgba(200,80,80,0.12)';
     msg.style.border = '1px solid rgba(200,80,80,0.3)';
     msg.style.color = '#e88';
-    msg.textContent = 'Hubo un error. Intenta de nuevo o escríbeme directamente.';
+    msg.textContent = 'Hubo un error. Intenta de nuevo en un momento.';
   }
 }
 </script>
@@ -567,6 +544,19 @@ async function suscribir() {
 
 <hr class="divider">
 
+<!-- BARRIERS -->
+<div class="section">
+  <div class="reveal">
+    <p class="section-eyebrow">Por qué este newsletter existe</p>
+    <h2 class="section-title">Las tres barreras que frenan<br>la gobernanza de IA</h2>
+  </div>
+  <div class="barriers-grid">
+    <div class="barrier-card reveal"><div class="barrier-num">Barrera 01</div><div class="barrier-title">Vacío y complejidad normativa</div><div class="barrier-text">AI Act europeo, NIST, lineamientos OCDE, regulación local... ¿cómo navegar marcos que avanzan más rápido que tu capacidad de implementarlos? Aquí te damos el mapa ejecutivo.</div></div>
+    <div class="barrier-card reveal"><div class="barrier-num">Barrera 02</div><div class="barrier-title">Desconocimiento de riesgos y oportunidades</div><div class="barrier-text">La mayoría de los líderes no identifican los riesgos legales, éticos y operativos al desplegar IA, ni las oportunidades concretas que están perdiendo cada semana.</div></div>
+    <div class="barrier-card reveal"><div class="barrier-num">Barrera 03</div><div class="barrier-title">Percepción de costo, no de inversión</div><div class="barrier-text">La gobernanza de IA se percibe como cumplimiento burocrático. En realidad es el sistema que protege de reclamaciones, reduce fricción regulatoria y genera confianza de mercado.</div></div>
+  </div>
+</div>
+
 <!-- WHAT YOU GET -->
 <div class="section">
 
@@ -583,39 +573,11 @@ async function suscribir() {
     <li class="reveal"><div class="icon">❓</div><div class="text"><strong>La pregunta de la semana para tu junta</strong><span>Una pregunta concreta para llevar a tu próxima sesión directiva y generar conversación de alto valor.</span></div></li>
   </ul>
 
-  <!-- Separador interno -->
-  <div style="border-top:1px solid var(--border);margin:52px 0;"></div>
-
-  <!-- Fila 2: Última edición — ancho completo -->
-  <div class="edition-card reveal" style="max-width:100%;">
-    <div class="edition-tag">Última edición</div>
-    <div class="edition-title">La debida diligencia para una IA Responsable: el nuevo estándar OCDE</div>
-    <ul class="edition-toc" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px 32px;">
-      <li><div class="num">1</div>Bogotá blindará a la niñez con IA: gobernanza como inversión estratégica</li>
-      <li><div class="num">2</div>Alianza UNESCO-CENIA: estándares éticos para Latinoamérica</li>
-      <li><div class="num">3</div>NIST establece el estándar para Agentes de IA autónomos</li>
-      <li><div class="num">4</div>Las 6 etapas de debida diligencia de la OCDE para directivos</li>
-      <li><div class="num">5</div>La pregunta de la semana: ¿capturamos el 5% o el potencial real?</li>
-    </ul>
-    <div class="quote-block" style="max-width:700px;">"Si la IA ya cubre el 70% de las tareas de tus profesionales más cualificados, pero tu organización solo captura el 5% de ese valor: ¿estás gobernando la IA o simplemente teniendo acceso a ella?"</div>
-  </div>
 
 </div>
 
 <hr class="divider">
 
-<!-- BARRIERS -->
-<div class="section">
-  <div class="reveal">
-    <p class="section-eyebrow">Por qué este newsletter existe</p>
-    <h2 class="section-title">Las tres barreras que frenan<br>la gobernanza de IA</h2>
-  </div>
-  <div class="barriers-grid">
-    <div class="barrier-card reveal"><div class="barrier-num">Barrera 01</div><div class="barrier-title">Vacío y complejidad normativa</div><div class="barrier-text">AI Act europeo, NIST, lineamientos OCDE, regulación local... ¿cómo navegar marcos que avanzan más rápido que tu capacidad de implementarlos? Aquí te damos el mapa ejecutivo.</div></div>
-    <div class="barrier-card reveal"><div class="barrier-num">Barrera 02</div><div class="barrier-title">Desconocimiento de riesgos y oportunidades</div><div class="barrier-text">La mayoría de los líderes no identifican los riesgos legales, éticos y operativos al desplegar IA, ni las oportunidades concretas que están perdiendo cada semana.</div></div>
-    <div class="barrier-card reveal"><div class="barrier-num">Barrera 03</div><div class="barrier-title">Percepción de costo, no de inversión</div><div class="barrier-text">La gobernanza de IA se percibe como cumplimiento burocrático. En realidad es el sistema que protege de reclamaciones, reduce fricción regulatoria y genera confianza de mercado.</div></div>
-  </div>
-</div>
 
 <!-- EDITIONS -->
 <hr class="divider">
